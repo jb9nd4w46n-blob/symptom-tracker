@@ -2,13 +2,140 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>Cosmetic Tracker</title>
+  <title>Cosmetic Intolerance Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- später evtl. Manifest / Icons für bessere PWA-Integration -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Cosmetic Tracker</h1>
-  <p>Hallo, ich bin deine erste eigene Web-App.</p>
+  <header>
+    <h1>Cosmetic Intolerance Tracker</h1>
+    <p class="subtitle">Prototyp · lokale Datenspeicherung im Browser</p>
+  </header>
+
+  <main>
+    <!-- Produkte anlegen und anzeigen -->
+    <section id="product-section">
+      <h2>Produkte</h2>
+
+      <form id="product-form" class="card">
+        <h3>Neues Produkt anlegen</h3>
+        <label>
+          Produktname*
+          <input type="text" id="product-name" required placeholder="z.B. Hydrating Cleanser">
+        </label>
+
+        <label>
+          Marke
+          <input type="text" id="product-brand" placeholder="z.B. CeraVe">
+        </label>
+
+        <label>
+          Kategorie
+          <input type="text" id="product-category" placeholder="z.B. Cleanser, Serum, Toner">
+        </label>
+
+        <label>
+          Inhaltsstoffe (INCI-Liste, durch Komma getrennt)
+          <textarea id="product-ingredients" rows="3"
+            placeholder="z.B. Aqua, Glycerin, Niacinamide, Ceramide NP"></textarea>
+        </label>
+
+        <button type="submit">Produkt speichern</button>
+      </form>
+
+      <div class="card">
+        <h3>Gespeicherte Produkte</h3>
+        <ul id="product-list" class="list"></ul>
+        <p class="hint">Tipp: Tippe auf ein Produkt, um die Details zu sehen.</p>
+      </div>
+
+      <div id="product-detail" class="card hidden">
+        <h3>Produktdetails</h3>
+        <p><strong>Name:</strong> <span id="detail-name"></span></p>
+        <p><strong>Marke:</strong> <span id="detail-brand"></span></p>
+        <p><strong>Kategorie:</strong> <span id="detail-category"></span></p>
+        <p><strong>Inhaltsstoffe:</strong></p>
+        <ul id="detail-ingredients" class="list"></ul>
+      </div>
+    </section>
+
+    <!-- Symptome verwalten -->
+    <section id="symptom-section">
+      <h2>Symptome</h2>
+
+      <form id="symptom-form" class="card">
+        <h3>Neues Symptom hinzufügen</h3>
+        <label>
+          Symptomname*
+          <input type="text" id="symptom-name" required placeholder="z.B. Rötung, Juckreiz, Brennen">
+        </label>
+        <button type="submit">Symptom speichern</button>
+      </form>
+
+      <div class="card">
+        <h3>Symptomliste</h3>
+        <ul id="symptom-list" class="list"></ul>
+      </div>
+    </section>
+
+    <!-- tägliches Tracking -->
+    <section id="tracking-section">
+      <h2>Tägliches Tracking</h2>
+
+      <div class="card">
+        <h3>Datum wählen</h3>
+        <label>
+          Datum
+          <input type="date" id="tracking-date">
+        </label>
+        <p class="hint">Standard ist heute. Du kannst auch frühere Tage nachtragen.</p>
+      </div>
+
+      <div class="card">
+        <h3>Verwendete Produkte an diesem Tag</h3>
+
+        <form id="usage-form" class="inline-form">
+          <label>
+            Produkt auswählen
+            <select id="usage-product"></select>
+          </label>
+          <button type="submit">hinzufügen</button>
+        </form>
+
+        <ul id="usage-list" class="list"></ul>
+      </div>
+
+      <div class="card">
+        <h3>Symptome an diesem Tag</h3>
+
+        <form id="symptom-entry-form" class="inline-form">
+          <label>
+            Symptom
+            <select id="symptom-select"></select>
+          </label>
+
+          <label>
+            Intensität (0–10)
+            <input type="number" id="symptom-intensity" min="0" max="10" step="1" value="0">
+          </label>
+
+          <button type="submit">hinzufügen</button>
+        </form>
+
+        <ul id="symptom-entry-list" class="list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <button id="export-button" class="danger">Daten exportieren (JSON)</button>
+    <button id="reset-button" class="danger">ALLE Daten löschen</button>
+    <p class="hint">
+      Alle Daten werden nur in deinem Browser gespeichert (localStorage).
+    </p>
+  </footer>
 
   <script src="app.js"></script>
 </body>
