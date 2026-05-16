@@ -161,6 +161,71 @@ footer .hint {
   display: none;
 }
 
+/* Zeile zum neuen Symptom hinzufügen */
+.symptom-new-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.symptom-new-row input {
+  flex: 1;
+}
+
+/* Symptome + Intensitätsbuttons im Tages-Tracking */
+.symptom-tracking-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.symptom-name {
+  flex: 1;
+}
+
+.intensity-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.intensity-btn {
+  border-radius: 999px;
+  padding: 4px 8px;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #0f172a;
+  background: #e5e7eb;
+}
+
+/* Farbskala 1 (apfelgrün) bis 5 (rot) */
+.intensity-btn.level-1 {
+  background: #bbf7d0; /* helles Grün */
+}
+
+.intensity-btn.level-2 {
+  background: #86efac; /* etwas kräftigeres Grün */
+}
+
+.intensity-btn.level-3 {
+  background: #facc15; /* Gelb */
+}
+
+.intensity-btn.level-4 {
+  background: #fdba74; /* Orange */
+}
+
+.intensity-btn.level-5 {
+  background: #fecaca; /* helles Rot */
+  color: #7f1d1d;
+}
+
+/* aktuell ausgewählter Wert */
+.intensity-btn.active {
+  box-shadow: 0 0 0 2px #111827;
+}
+
 /* Mobile Anpassung */
 @media (max-width: 600px) {
   main {
