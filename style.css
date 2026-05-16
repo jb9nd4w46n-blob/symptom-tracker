@@ -1,362 +1,234 @@
-// --- Datenbank im Speicher -------------------------
+* {
+  box-sizing: border-box;
+}
 
-let db = {
-  products: [],        // { id, name, brand, category, ingredients: [string] }
-  symptoms: [],        // { id, name }
-  usages: [],          // { id, date, productId }
-  symptomEntries: []   // { id, date, symptomId, intensity }
-};
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f5f5f7;
+  color: #111;
+}
 
-// --- Laden/Speichern in localStorage ----------------
+header {
+  background: #111827;
+  color: #f9fafb;
+  padding: 16px;
+}
 
-const DB_KEY = "cosmeticTrackerDb_v1";
+h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
 
-function loadDb() {
-  const stored = localStorage.getItem(DB_KEY);
-  if (stored) {
-    try {
-      db = JSON.parse(stored);
-    } catch (e) {
-      console.error("Konnte gespeicherte Daten nicht lesen:", e);
-    }
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+main {
+  padding: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+section {
+  margin-bottom: 24px;
+}
+
+h2 {
+  margin: 16px 4px 8px;
+  font-size: 1.2rem;
+}
+
+h3 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 4px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font: inherit;
+  background: #f9fafb;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+button.danger {
+  background: #b91c1c;
+}
+
+button.danger:hover {
+  background: #991b1b;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.inline-form label {
+  flex: 1 1 140px;
+}
+
+.list {
+  list-style: none;
+  padding-left: 0;
+  margin: 8px 0 0;
+}
+
+.list li {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 4px;
+  background: #f9fafb;
+  font-size: 0.9rem;
+}
+
+.list li button {
+  margin-left: 8px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+
+.list li.clickable {
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+footer {
+  max-width: 900px;
+  margin: 0 auto 24px;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+footer .hint {
+  margin: 0 4px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Zeile zum neuen Symptom hinzufügen */
+.symptom-new-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.symptom-new-row input {
+  flex: 1;
+}
+
+/* Symptome + Intensitätsbuttons im Tages-Tracking */
+.symptom-tracking-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.symptom-name {
+  flex: 1;
+}
+
+.intensity-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.intensity-btn {
+  border-radius: 999px;
+  padding: 4px 8px;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #0f172a;
+  background: #e5e7eb;
+}
+
+/* Farbskala 1 (apfelgrün) bis 5 (rot) */
+.intensity-btn.level-1 {
+  background: #bbf7d0; /* helles Grün */
+}
+
+.intensity-btn.level-2 {
+  background: #86efac; /* etwas kräftigeres Grün */
+}
+
+.intensity-btn.level-3 {
+  background: #facc15; /* Gelb */
+}
+
+.intensity-btn.level-4 {
+  background: #fdba74; /* Orange */
+}
+
+.intensity-btn.level-5 {
+  background: #fecaca; /* helles Rot */
+  color: #7f1d1d;
+}
+
+/* aktuell ausgewählter Wert */
+.intensity-btn.active {
+  box-shadow: 0 0 0 2px #111827;
+}
+
+/* Mobile Anpassung */
+@media (max-width: 600px) {
+  main {
+    padding: 8px;
   }
 }
-
-function saveDb() {
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
-}
-
-// --- Hilfsfunktionen -------------------------------
-
-function byId(id) {
-  return document.getElementById(id);
-}
-
-function setToday(dateInput) {
-  const today = new Date();
-  const tzOffset = today.getTimezoneOffset() * 60000;
-  const localISODate = new Date(today - tzOffset).toISOString().slice(0, 10);
-  dateInput.value = localISODate;
-}
-
-// --- DOM-Referenzen --------------------------------
-
-const productListEl = byId("product-list");
-const productDetailEl = byId("product-detail");
-const detailNameEl = byId("detail-name");
-const detailBrandEl = byId("detail-brand");
-const detailCategoryEl = byId("detail-category");
-const detailIngredientsEl = byId("detail-ingredients");
-const usageProductSelect = byId("usage-product");
-
-const symptomListEl = byId("symptom-list");
-const symptomNewNameInput = byId("symptom-new-name");
-const symptomAddButton = byId("symptom-add-button");
-
-const usageListEl = byId("usage-list");
-const trackingDateInput = byId("tracking-date");
-const symptomTrackingListEl = byId("symptom-tracking-list");
-
-// --- Rendering-Funktionen --------------------------
-
-// Produkte anzeigen + Select für Usage füllen
-function renderProducts() {
-  productListEl.innerHTML = "";
-  usageProductSelect.innerHTML = "";
-
-  db.products.forEach(product => {
-    // Liste
-    const li = document.createElement("li");
-    li.classList.add("clickable");
-    li.textContent = `${product.name} ${product.brand ? "(" + product.brand + ")" : ""}`;
-    li.addEventListener("click", () => showProductDetail(product.id));
-    productListEl.appendChild(li);
-
-    // Select
-    const opt = document.createElement("option");
-    opt.value = String(product.id);
-    opt.textContent = product.name;
-    usageProductSelect.appendChild(opt);
-  });
-
-  if (db.products.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "Noch keine Produkte angelegt.";
-    productListEl.appendChild(li);
-
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "Keine Produkte verfügbar";
-    usageProductSelect.appendChild(opt);
-  }
-}
-
-// Produktdetails anzeigen
-function showProductDetail(productId) {
-  const product = db.products.find(p => p.id === productId);
-  if (!product) return;
-
-  detailNameEl.textContent = product.name;
-  detailBrandEl.textContent = product.brand || "—";
-  detailCategoryEl.textContent = product.category || "—";
-
-  detailIngredientsEl.innerHTML = "";
-  if (product.ingredients && product.ingredients.length > 0) {
-    product.ingredients.forEach(ing => {
-      const li = document.createElement("li");
-      li.textContent = ing;
-      detailIngredientsEl.appendChild(li);
-    });
-  } else {
-    const li = document.createElement("li");
-    li.textContent = "Keine Inhaltsstoffe hinterlegt.";
-    detailIngredientsEl.appendChild(li);
-  }
-
-  productDetailEl.classList.remove("hidden");
-}
-
-// Symptome anzeigen
-function renderSymptoms() {
-  symptomListEl.innerHTML = "";
-
-  db.symptoms.forEach(symptom => {
-    const li = document.createElement("li");
-    li.textContent = symptom.name;
-    symptomListEl.appendChild(li);
-  });
-
-  if (db.symptoms.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "Noch keine Symptome angelegt.";
-    symptomListEl.appendChild(li);
-  }
-}
-
-// Symptome + Intensitäten für ein Datum anzeigen
-function renderSymptomTracking(dateStr) {
-  symptomTrackingListEl.innerHTML = "";
-
-  if (db.symptoms.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "Noch keine Symptome definiert.";
-    symptomTrackingListEl.appendChild(li);
-    return;
-  }
-
-  db.symptoms.forEach(symptom => {
-    const li = document.createElement("li");
-    li.classList.add("symptom-tracking-row");
-
-    const nameSpan = document.createElement("span");
-    nameSpan.classList.add("symptom-name");
-    nameSpan.textContent = symptom.name;
-
-    const buttonsDiv = document.createElement("div");
-    buttonsDiv.classList.add("intensity-buttons");
-
-    const existing = db.symptomEntries.find(e => e.date === dateStr && e.symptomId === symptom.id);
-    const currentIntensity = existing ? existing.intensity : 0;
-
-    for (let level = 1; level <= 5; level++) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = String(level);
-      btn.classList.add("intensity-btn", `level-${level}`);
-      if (level === currentIntensity) {
-        btn.classList.add("active");
-      }
-
-      btn.addEventListener("click", () => {
-        updateSymptomIntensity(dateStr, symptom.id, level);
-      });
-
-      buttonsDiv.appendChild(btn);
-    }
-
-    li.appendChild(nameSpan);
-    li.appendChild(buttonsDiv);
-    symptomTrackingListEl.appendChild(li);
-  });
-}
-
-// Intensität setzen/umschalten
-function updateSymptomIntensity(dateStr, symptomId, level) {
-  const idx = db.symptomEntries.findIndex(
-    e => e.date === dateStr && e.symptomId === symptomId
-  );
-
-  if (idx >= 0) {
-    const existing = db.symptomEntries[idx];
-    if (existing.intensity === level) {
-      // gleicher Button -> Eintrag entfernen (zurück auf "kein Eintrag")
-      db.symptomEntries.splice(idx, 1);
-    } else {
-      db.symptomEntries[idx].intensity = level;
-    }
-  } else {
-    db.symptomEntries.push({
-      id: Date.now() + Math.random(),
-      date: dateStr,
-      symptomId,
-      intensity: level
-    });
-  }
-
-  saveDb();
-  renderSymptomTracking(dateStr);
-}
-
-// Usages + SymptomTracking für ein Datum anzeigen
-function renderForDate(dateStr) {
-  // Usages
-  usageListEl.innerHTML = "";
-  const usages = db.usages.filter(u => u.date === dateStr);
-
-  if (usages.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "Keine Produkte an diesem Tag erfasst.";
-    usageListEl.appendChild(li);
-  } else {
-    usages.forEach(u => {
-      const product = db.products.find(p => p.id === u.productId);
-      const li = document.createElement("li");
-      li.textContent = product ? product.name : "Unbekanntes Produkt";
-      usageListEl.appendChild(li);
-    });
-  }
-
-  // Symptome + Intensität
-  renderSymptomTracking(dateStr);
-}
-
-// --- Event-Handler ----------------------------------
-
-// Produkt-Formular
-byId("product-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const name = byId("product-name").value.trim();
-  const brand = byId("product-brand").value.trim();
-  const category = byId("product-category").value.trim();
-  const ingredientsText = byId("product-ingredients").value.trim();
-
-  if (!name) return;
-
-  const ingredients = ingredientsText
-    ? ingredientsText.split(",").map(s => s.trim()).filter(Boolean)
-    : [];
-
-  const newProduct = {
-    id: Date.now(),
-    name,
-    brand,
-    category,
-    ingredients
-  };
-
-  db.products.push(newProduct);
-  saveDb();
-
-  byId("product-form").reset();
-  renderProducts();
-  renderForDate(trackingDateInput.value);
-});
-
-// Neues Symptom (letzte Zeile)
-symptomAddButton.addEventListener("click", () => {
-  const name = symptomNewNameInput.value.trim();
-  if (!name) return;
-
-  const newSymptom = {
-    id: Date.now(),
-    name
-  };
-
-  db.symptoms.push(newSymptom);
-  saveDb();
-
-  symptomNewNameInput.value = "";
-  renderSymptoms();
-  renderForDate(trackingDateInput.value);
-});
-
-symptomNewNameInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    symptomAddButton.click();
-  }
-});
-
-// Datum geändert
-trackingDateInput.addEventListener("change", () => {
-  renderForDate(trackingDateInput.value);
-});
-
-// Usage hinzufügen
-byId("usage-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const dateStr = trackingDateInput.value;
-  const productIdStr = usageProductSelect.value;
-  if (!dateStr || !productIdStr) return;
-
-  const productId = Number(productIdStr);
-  if (!db.products.find(p => p.id === productId)) return;
-
-  const newUsage = {
-    id: Date.now(),
-    date: dateStr,
-    productId
-  };
-
-  db.usages.push(newUsage);
-  saveDb();
-  renderForDate(dateStr);
-});
-
-// Export-Button – JSON-Datei herunterladen
-byId("export-button").addEventListener("click", () => {
-  try {
-    const json = JSON.stringify(db, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-
-    const today = new Date().toISOString().slice(0, 10); // z.B. 2026-05-16
-    a.href = url;
-    a.download = `cosmetic-tracker-${today}.json`;
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (e) {
-    console.error("Export fehlgeschlagen:", e);
-    alert("Export fehlgeschlagen. Details in der Konsole.");
-  }
-});
-
-// Reset-Button
-byId("reset-button").addEventListener("click", () => {
-  if (!confirm("Wirklich alle lokal gespeicherten Daten löschen?")) return;
-  db = {
-    products: [],
-    symptoms: [],
-    usages: [],
-    symptomEntries: []
-  };
-  saveDb();
-  renderProducts();
-  renderSymptoms();
-  renderForDate(trackingDateInput.value);
-});
-
-// --- Initialisierung --------------------------------
-
-loadDb();
-setToday(trackingDateInput);
-renderProducts();
-renderSymptoms();
-renderForDate(trackingDateInput.value);
