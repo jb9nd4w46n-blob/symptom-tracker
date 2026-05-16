@@ -39,7 +39,7 @@ function setToday(dateInput) {
   dateInput.value = localISODate;
 }
 
-// --- Rendering-Funktionen --------------------------
+// --- DOM-Referenzen --------------------------------
 
 const productListEl = byId("product-list");
 const productDetailEl = byId("product-detail");
@@ -50,11 +50,14 @@ const detailIngredientsEl = byId("detail-ingredients");
 const usageProductSelect = byId("usage-product");
 
 const symptomListEl = byId("symptom-list");
-const symptomSelectEl = byId("symptom-select");
+const symptomNewNameInput = byId("symptom-new-name");
+const symptomAddButton = byId("symptom-add-button");
 
 const usageListEl = byId("usage-list");
-const symptomEntryListEl = byId("symptom-entry-list");
 const trackingDateInput = byId("tracking-date");
+const symptomTrackingListEl = byId("symptom-tracking-list");
+
+// --- Rendering-Funktionen --------------------------
 
 // Produkte anzeigen + Select für Usage füllen
 function renderProducts() {
@@ -113,35 +116,98 @@ function showProductDetail(productId) {
   productDetailEl.classList.remove("hidden");
 }
 
-// Symptome anzeigen + Select füllen
+// Symptome anzeigen
 function renderSymptoms() {
   symptomListEl.innerHTML = "";
-  symptomSelectEl.innerHTML = "";
 
   db.symptoms.forEach(symptom => {
     const li = document.createElement("li");
     li.textContent = symptom.name;
     symptomListEl.appendChild(li);
-
-    const opt = document.createElement("option");
-    opt.value = String(symptom.id);
-    opt.textContent = symptom.name;
-    symptomSelectEl.appendChild(opt);
   });
 
   if (db.symptoms.length === 0) {
     const li = document.createElement("li");
     li.textContent = "Noch keine Symptome angelegt.";
     symptomListEl.appendChild(li);
-
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "Keine Symptome verfügbar";
-    symptomSelectEl.appendChild(opt);
   }
 }
 
-// Usages + SymptomEntries für ein Datum anzeigen
+// Symptome + Intensitäten für ein Datum anzeigen
+function renderSymptomTracking(dateStr) {
+  symptomTrackingListEl.innerHTML = "";
+
+  if (db.symptoms.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "Noch keine Symptome definiert.";
+    symptomTrackingListEl.appendChild(li);
+    return;
+  }
+
+  db.symptoms.forEach(symptom => {
+    const li = document.createElement("li");
+    li.classList.add("symptom-tracking-row");
+
+    const nameSpan = document.createElement("span");
+    nameSpan.classList.add("symptom-name");
+    nameSpan.textContent = symptom.name;
+
+    const buttonsDiv = document.createElement("div");
+    buttonsDiv.classList.add("intensity-buttons");
+
+    const existing = db.symptomEntries.find(e => e.date === dateStr && e.symptomId === symptom.id);
+    const currentIntensity = existing ? existing.intensity : 0;
+
+    for (let level = 1; level <= 5; level++) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = String(level);
+      btn.classList.add("intensity-btn", `level-${level}`);
+      if (level === currentIntensity) {
+        btn.classList.add("active");
+      }
+
+      btn.addEventListener("click", () => {
+        updateSymptomIntensity(dateStr, symptom.id, level);
+      });
+
+      buttonsDiv.appendChild(btn);
+    }
+
+    li.appendChild(nameSpan);
+    li.appendChild(buttonsDiv);
+    symptomTrackingListEl.appendChild(li);
+  });
+}
+
+// Intensität setzen/umschalten
+function updateSymptomIntensity(dateStr, symptomId, level) {
+  const idx = db.symptomEntries.findIndex(
+    e => e.date === dateStr && e.symptomId === symptomId
+  );
+
+  if (idx >= 0) {
+    const existing = db.symptomEntries[idx];
+    if (existing.intensity === level) {
+      // gleicher Button -> Eintrag entfernen (zurück auf "kein Eintrag")
+      db.symptomEntries.splice(idx, 1);
+    } else {
+      db.symptomEntries[idx].intensity = level;
+    }
+  } else {
+    db.symptomEntries.push({
+      id: Date.now() + Math.random(),
+      date: dateStr,
+      symptomId,
+      intensity: level
+    });
+  }
+
+  saveDb();
+  renderSymptomTracking(dateStr);
+}
+
+// Usages + SymptomTracking für ein Datum anzeigen
 function renderForDate(dateStr) {
   // Usages
   usageListEl.innerHTML = "";
@@ -160,22 +226,8 @@ function renderForDate(dateStr) {
     });
   }
 
-  // SymptomEntries
-  symptomEntryListEl.innerHTML = "";
-  const entries = db.symptomEntries.filter(e => e.date === dateStr);
-
-  if (entries.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "Keine Symptome an diesem Tag erfasst.";
-    symptomEntryListEl.appendChild(li);
-  } else {
-    entries.forEach(e => {
-      const symptom = db.symptoms.find(s => s.id === e.symptomId);
-      const li = document.createElement("li");
-      li.textContent = `${symptom ? symptom.name : "Unbekanntes Symptom"}: Intensität ${e.intensity}`;
-      symptomEntryListEl.appendChild(li);
-    });
-  }
+  // Symptome + Intensität
+  renderSymptomTracking(dateStr);
 }
 
 // --- Event-Handler ----------------------------------
@@ -208,13 +260,12 @@ byId("product-form").addEventListener("submit", (e) => {
 
   byId("product-form").reset();
   renderProducts();
+  renderForDate(trackingDateInput.value);
 });
 
-// Symptom-Formular
-byId("symptom-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const name = byId("symptom-name").value.trim();
+// Neues Symptom (letzte Zeile)
+symptomAddButton.addEventListener("click", () => {
+  const name = symptomNewNameInput.value.trim();
   if (!name) return;
 
   const newSymptom = {
@@ -225,8 +276,16 @@ byId("symptom-form").addEventListener("submit", (e) => {
   db.symptoms.push(newSymptom);
   saveDb();
 
-  byId("symptom-form").reset();
+  symptomNewNameInput.value = "";
   renderSymptoms();
+  renderForDate(trackingDateInput.value);
+});
+
+symptomNewNameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    symptomAddButton.click();
+  }
 });
 
 // Datum geändert
@@ -253,33 +312,6 @@ byId("usage-form").addEventListener("submit", (e) => {
 
   db.usages.push(newUsage);
   saveDb();
-  renderForDate(dateStr);
-});
-
-// SymptomEntry hinzufügen
-byId("symptom-entry-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const dateStr = trackingDateInput.value;
-  const symptomIdStr = symptomSelectEl.value;
-  const intensityStr = byId("symptom-intensity").value;
-
-  if (!dateStr || !symptomIdStr) return;
-
-  const symptomId = Number(symptomIdStr);
-  const intensity = Number(intensityStr);
-  if (Number.isNaN(intensity)) return;
-
-  const newEntry = {
-    id: Date.now(),
-    date: dateStr,
-    symptomId,
-    intensity
-  };
-
-  db.symptomEntries.push(newEntry);
-  saveDb();
-  byId("symptom-entry-form").reset();
   renderForDate(dateStr);
 });
 
